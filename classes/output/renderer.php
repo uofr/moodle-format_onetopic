@@ -17,6 +17,7 @@
 namespace format_onetopic\output;
 
 use core_courseformat\output\section_renderer;
+use core_courseformat\base as course_format;
 use moodle_page;
 
 /**
@@ -63,5 +64,35 @@ class renderer extends section_renderer {
      */
     public function section_title_without_link($section, $course) {
         return $this->render(course_get_format($course)->inplace_editable_render_section_name($section, false));
+    }
+
+    /**
+     * Get the course index drawer with placeholder.
+     *
+     * The default course index is loaded after the page is ready. Format plugins can override
+     * this method to provide an alternative course index.
+     *
+     * If the format is not compatible with the course index, this method will return an empty string.
+     * 
+     * UR Edit: Now has custom links.
+     *
+     * @param course_format $format the course format
+     * @return string the course index HTML.
+     */
+    public function course_index_drawer(course_format $format): ?string {
+        if ($format->uses_course_index()) {
+            include_course_editor($format);
+            $customlinkscontext = [
+                'customlinks' => [
+                    ['url' => new \moodle_url('/'), 'name' => 'Home'],
+                    ['url' => new \moodle_url('/my/'), 'name' => 'Dashboard'],
+                    ['url' => new \moodle_url('/my/courses.php'), 'name' => 'My Courses'],
+                ]
+            ];
+            $output = $this->render_from_template('format_onetopic/customlinks', $customlinkscontext);
+            $output .= $this->render_from_template('core_courseformat/local/courseindex/drawer', []);
+            return $output;
+        }
+        return '';
     }
 }
